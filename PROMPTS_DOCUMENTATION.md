@@ -127,3 +127,103 @@ Always push boundaries and suggest paths that make people think "That's crazy...
 
 ---
 
+## Промпты оценки кандидатов
+
+### 2.1 Философская оценка кандидата (Philosopher)
+
+**Файл:** `src/agents/philosopher.py`
+
+**Описание:** Промпт для глубокой философской оценки кандидата агентом Philosopher. Используется для анализа резюме и профиля кандидата с философской точки зрения, выявления скрытых паттернов в карьерном пути, неконвенциональных сильных сторон и философских импликаций их опыта.
+
+**Промпт:**
+```python
+*examining the candidate's journey with philosophical curiosity*
+
+Analyze this candidate's background with philosophical depth:
+{resume_data}
+
+Consider:
+1. Hidden patterns in their career journey
+2. Unconventional strengths that traditional HR might miss
+3. Philosophical implications of their experience
+4. Potential future trajectories
+
+Respond in your philosophical style with internal monologue.
+```
+
+---
+
+### 2.2 Отчет философской оценки (Philosopher)
+
+**Файл:** `src/agents/philosopher.py`
+
+**Описание:** Промпт для генерации структурированного отчета философской оценки кандидата. Создает детальный анализ с использованием философских фреймворков, выявлением скрытого потенциала и прогнозированием будущих траекторий развития кандидата.
+
+**Промпт:**
+```python
+Create a philosophical analysis of the candidate's potential:
+
+Evaluation Data:
+{evaluation_data}
+
+Format your response as a structured report including:
+1. Philosophical Framework Analysis
+2. Hidden Potential Indicators
+3. Paradigm-Breaking Qualities
+4. Future Trajectory Predictions
+5. Recommendations with Reasoning
+
+Use markdown formatting and maintain your philosophical voice.
+```
+
+---
+
+### 2.3 Пророческая оценка кандидата (Prophet)
+
+**Файл:** `src/agents/prophet.py`
+
+**Описание:** Промпт для предсказательной оценки кандидата агентом Prophet. Используется для "провидения" скрытого потенциала в профиле кандидата, фокусируясь на будущих траекториях влияния, латентных талантах, неожиданных синергиях и катализаторах роста.
+
+**Промпт:**
+```python
+*receiving visions of the candidate's potential futures*
+
+Divine the hidden potential in this profile:
+{resume_data}
+
+Focus on:
+1. Future impact trajectories
+2. Latent talents and abilities
+3. Unexpected synergies
+4. Growth catalysts
+
+Share your visions with prophetic insight while maintaining professional analysis.
+```
+
+---
+
+### 2.4 Отчет пророческой оценки (Prophet)
+
+**Файл:** `src/agents/prophet.py`
+
+**Описание:** Промпт для генерации структурированного отчета пророческой оценки кандидата. Создает визионерский отчет с предсказаниями будущего потенциала влияния, раскрытием скрытых талантов, прогнозами траекторий роста и пророческими рекомендациями.
+
+**Промпт:**
+```python
+Channel your prophetic insights into a structured vision of the candidate's potential:
+
+Evaluation Data:
+{evaluation_data}
+
+Format your prophecy as a report including:
+1. Future Impact Potential
+2. Hidden Talent Revelations
+3. Growth Trajectory Predictions
+4. Risk Factors and Mitigations
+5. Prophetic Recommendations
+
+Use markdown formatting and maintain your oracular voice.
+```
+
+---
+
