@@ -305,3 +305,323 @@ Timeline Visions:
 
 ---
 
+## Интерактивные промпты сессий
+
+### 4.1 Промпты User Advocate для карьерного консультирования
+
+#### 4.1.1 Запрос рекомендаций от Strategist
+
+**Файл:** `src/agents/advocate.py`
+
+**Описание:** Промпт для User Advocate, чтобы запросить конкретные рекомендации от Strategist. Используется в процессе совместного обсуждения карьерного развития пользователя, фокусируясь на практических следующих шагах, необходимых навыках и потенциальных вызовах.
+
+**Промпт:**
+```python
+The Strategist has provided this analysis: {strategist_analysis}
+
+Request specific recommendations from the Strategist, focusing on:
+- Practical next steps
+- Specific skills needed
+- Potential challenges to address
+
+Frame your request as part of the ongoing discussion.
+```
+
+---
+
+#### 4.1.2 Суммирование рекомендаций для пользователя
+
+**Файл:** `src/agents/advocate.py`
+
+**Описание:** Промпт для User Advocate, чтобы суммировать рекомендации Strategist для пользователя в ясной, действенной и приоритизированной форме. Представляет итоги совместного обсуждения агентов в доступной для пользователя форме.
+
+**Промпт:**
+```python
+The Strategist has recommended: {recommendations}
+
+Summarize these recommendations for the user, making them:
+- Actionable and clear
+- Prioritized by importance
+- Tailored to their specific situation
+
+Frame this as a collaborative conclusion to our discussion.
+```
+
+---
+
+#### 4.1.3 Генерация секции отчета
+
+**Файл:** `src/agents/advocate.py`
+
+**Описание:** Промпт для User Advocate для создания неконвенционального плана развития на основе обсуждения. Генерирует действенный план с картой обучения для возникающих технологий, уникальными проектными идеями, нестандартными возможностями нетворкинга и контрарианскими карьерными шагами.
+
+**Промпт:**
+```python
+Based on our discussion about {topic}:
+{content}
+
+Create an actionable, unconventional development plan that:
+1. Maps out a learning path for emerging technologies
+2. Suggests unique project ideas combining multiple disciplines
+3. Identifies non-obvious networking opportunities
+4. Lists contrarian career moves that could pay off
+5. Provides specific resource recommendations
+
+Format in markdown with clear sections and bullet points.
+Focus on actionable steps that prepare for future opportunities.
+```
+
+---
+
+### 4.2 Промпты Strategist для карьерного консультирования
+
+#### 4.2.1 Предоставление рекомендаций
+
+**Файл:** `src/agents/strategist.py`
+
+**Описание:** Промпт для Strategist для предоставления детальных рекомендаций в ответ на запрос User Advocate. Фокусируется на конкретных навыках для развития, ресурсах для обучения, карьерных вехах и построении связей в индустрии.
+
+**Промпт:**
+```python
+The User Advocate has requested: {advocate_request}
+
+Provide detailed recommendations, addressing:
+- Specific skills to develop
+- Learning resources
+- Career milestones to target
+- Industry connections to build
+
+Frame your response as part of the ongoing discussion with your fellow agents.
+```
+
+---
+
+#### 4.2.2 Генерация секции отчета
+
+**Файл:** `src/agents/strategist.py`
+
+**Описание:** Промпт для Strategist для создания провокационной, перспективной секции отчета. Идентифицирует возникающие микро-ниши, неконвенциональные комбинации навыков, возможности технологической конвергенции и преимущества первопроходцев на временном горизонте 2024-2030.
+
+**Промпт:**
+```python
+Based on our discussion about {topic}:
+{content}
+
+Create a provocative, forward-thinking report section that:
+1. Identifies 2-3 emerging micro-niches that combine multiple disciplines
+2. Highlights unconventional skill combinations
+3. Predicts technological convergence opportunities
+4. Suggests timeline for market emergence (2024-2030)
+5. Lists potential first-mover advantages
+
+Format in markdown with clear sections and bullet points.
+Focus on ideas that seem radical now but could be mainstream in 3-5 years.
+```
+
+---
+
+### 4.3 Базовый промпт генерации отчета
+
+**Файл:** `src/agents/base_agent.py`
+
+**Описание:** Универсальный промпт для генерации секции отчета любым агентом. Используется как резервный вариант для создания детальных, но кратких разделов отчета на основе обсуждения, с фокусом на неконвенциональные, перспективные инсайты.
+
+**Промпт:**
+```python
+Create a detailed but concise report section about {topic} based on our discussion:
+{content}
+
+Format it in markdown with:
+- Clear headings
+- Bullet points for key insights
+- Code snippets or technical details where relevant
+- Timeline estimates
+- Risk factors
+
+Focus on unconventional, forward-thinking insights.
+```
+
+---
+
+### 4.4 Промпты интерактивных сессий оценки
+
+#### 4.4.1 Чат с Principals
+
+**Файл:** `src/main.py`
+
+**Описание:** Промпт для интерактивного чата с агентами на основе оценки кандидата. Позволяет пользователю задавать вопросы о кандидате на позицию Discord Architect, используя контекст оценочного отчета, бэкграунда кандидата и требований Principals Network.
+
+**Промпт:**
+```python
+Based on the candidate evaluation for {name} for the Discord Architect role,
+please answer this question: {question}
+
+Consider:
+- The evaluation report details
+- The candidate's background
+- Principals Network's requirements
+```
+
+---
+
+#### 4.4.2 Предложение альтернативных ролей
+
+**Файл:** `src/main.py`
+
+**Описание:** Промпт для предложения альтернативных ролей в Principals Network, где кандидат мог бы преуспеть. Анализирует уникальную комбинацию навыков кандидата и его потенциал для других позиций в организации.
+
+**Промпт:**
+```python
+Based on the candidate's profile and evaluation:
+{application}
+
+Suggest alternative roles at Principals Network where they might excel.
+Consider their unique combination of skills and potential.
+```
+
+---
+
+#### 4.4.3 Глубинный анализ
+
+**Файл:** `src/main.py`
+
+**Описание:** Промпт для проведения глубинного анализа конкретного аспекта кандидата. Используется для детального исследования определенной области (например, технических навыков, лидерских качеств, культурного соответствия) с учетом всех данных оценки.
+
+**Промпт:**
+```python
+Perform a deep dive analysis of the candidate's {aspect}.
+Consider all evaluation data and provide detailed insights.
+```
+
+---
+
+#### 4.4.4 Создание кастомного ассесмента
+
+**Файл:** `src/main.py`
+
+**Описание:** Промпт для создания индивидуального ассесмента для кандидата. Генерирует специализированную оценку, адаптированную под бэкграунд кандидата и потенциальные области для углубленной проверки.
+
+**Промпт:**
+```python
+Create a custom {assessment_type} for {candidate_name},
+tailored to their background and potential areas for evaluation.
+```
+
+---
+
+#### 4.4.5 Предложения по улучшению процесса
+
+**Файл:** `src/main.py`
+
+**Описание:** Промпт для получения обратной связи и предложений по улучшению процесса оценки. Анализирует, что можно улучшить в методологии оценки, какие дополнительные аспекты следует учитывать, и как лучше оценивать кандидатов определенного типа.
+
+**Промпт:**
+```python
+Based on the candidate's profile and our evaluation process:
+1. What could we improve in our evaluation?
+2. What additional aspects should we consider?
+3. How can we better assess this type of candidate?
+```
+
+---
+
+#### 4.4.6 Симуляция командного взаимодействия
+
+**Файл:** `src/main.py`
+
+**Описание:** Промпт для симуляции детального сценария командного взаимодействия кандидата в роли Discord Architect. Создает реалистичную ситуацию с конкретными деталями, вероятными реакциями кандидата, командной динамикой, процессом принятия решений и анализом стиля коммуникации.
+
+**Промпт:**
+```python
+Simulate a detailed team interaction scenario for {name} as Discord Architect:
+
+Scenario: {scenario}
+
+Include:
+- Specific situation details
+- Candidate's likely responses
+- Team dynamics
+- Decision-making process
+- Communication style analysis
+- Potential challenges and solutions
+
+Make it feel like a real-time interaction.
+```
+
+---
+
+#### 4.4.7 Дорожная карта роста
+
+**Файл:** `src/main.py`
+
+**Описание:** Промпт для создания детальной дорожной карты роста кандидата в роли Discord Architect. Включает конкретные вехи, цели развития навыков, целевые показатели построения сообщества, цели технического обучения, возможности развития лидерства и метрики успеха на заданный временной период.
+
+**Промпт:**
+```python
+Create a detailed growth roadmap for {name} as Discord Architect:
+
+Timeframe: {timeframe}
+
+Include:
+- Specific milestones
+- Skill development goals
+- Community building targets
+- Technical learning objectives
+- Leadership development opportunities
+- Success metrics
+
+Make it actionable and measurable.
+```
+
+---
+
+#### 4.4.8 Анализ будущего влияния
+
+**Файл:** `src/main.py`
+
+**Описание:** Промпт для анализа потенциального будущего влияния кандидата на Principals Network. Рассматривает краткосрочные победы (1-3 месяца), среднесрочные достижения (3-6 месяцев), долгосрочную трансформацию (6-12 месяцев), волновые эффекты в организации, потенциальные инновации и улучшения, а также риски и возможности.
+
+**Промпт:**
+```python
+Analyze the potential future impact of {name} on Principals Network:
+
+Focus Area: {impact_area}
+
+Consider:
+- Short-term wins (1-3 months)
+- Medium-term achievements (3-6 months)
+- Long-term transformation (6-12 months)
+- Ripple effects across the organization
+- Potential innovations and improvements
+- Risks and opportunities
+
+Be specific and visionary while maintaining realism.
+```
+
+---
+
+#### 4.4.9 Конкурентный анализ
+
+**Файл:** `src/main.py`
+
+**Описание:** Промпт для проведения конкурентного анализа кандидата относительно рыночных стандартов. Включает индустриальные бенчмарки, уникальные дифференциаторы, рыночную позицию, конкурентные преимущества, области для соответствия рынку и ценностное предложение с конкретными примерами и сравнениями.
+
+**Промпт:**
+```python
+Perform a competitive analysis of {name} against market standards:
+
+Focus: {aspect}
+
+Include:
+- Industry benchmarks
+- Unique differentiators
+- Market position
+- Competitive advantages
+- Areas for market alignment
+- Value proposition
+
+Provide specific examples and comparisons.
+```
+
+---
+
