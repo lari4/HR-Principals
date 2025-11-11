@@ -694,3 +694,691 @@ Advocate: Резюме для пользователя
 
 ---
 
+## 3. Интерактивные пайплайны
+
+### Описание
+Набор из 12 интерактивных пайплайнов, которые активируются после первичной оценки кандидата. Пользователь выбирает одну из опций и система запускает соответствующий AI workflow.
+
+### Файл
+`src/main.py` → `InteractiveSession`
+
+### Общая структура
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                 ИНТЕРАКТИВНАЯ СЕССИЯ (ГЛАВНОЕ МЕНЮ)                 │
+└─────────────────────────────────────────────────────────────────────┘
+
+                    ┌──────────────────────┐
+                    │ Выбор пользователя   │
+                    │ (1-12)               │
+                    └──────────┬───────────┘
+                               │
+            ┌──────────────────┼──────────────────┐
+            │                  │                  │
+            ▼                  ▼                  ▼
+    ┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+    │ Категория 1:  │  │ Категория 2:  │  │ Категория 3:  │
+    │ Диалоговые    │  │ Аналитические │  │ Процедурные   │
+    │               │  │               │  │               │
+    │ 1. Chat       │  │ 4. Alt Roles  │  │ 2. Approve    │
+    │11. Improve    │  │ 5. Deep Dive  │  │ 3. Reject     │
+    │               │  │ 6. Assessment │  │12. Exit       │
+    │               │  │ 7. Team Sim   │  │               │
+    │               │  │ 8. Roadmap    │  │               │
+    │               │  │ 9. Impact     │  │               │
+    │               │  │10. Competitive│  │               │
+    └───────────────┘  └───────────────┘  └───────────────┘
+```
+
+---
+
+### 3.1 Чат с Principals
+
+**Назначение**: Интерактивный Q&A с AI агентами о кандидате
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────────────────────┐
+│           ПАЙПЛАЙН: ЧАТ С PRINCIPALS                   │
+└────────────────────────────────────────────────────────┘
+
+    Вход: question (от пользователя)
+      │
+      ▼
+    ┌──────────────────────────┐
+    │ Формирование промпта:    │
+    │ - Имя кандидата          │
+    │ - Детали оценки          │
+    │ - Бэкграунд кандидата    │
+    │ - Требования PN          │
+    │ - Вопрос пользователя    │
+    └────────┬─────────────────┘
+             │
+             ├──────────────────┐
+             │                  │
+             ▼                  ▼
+    ┌────────────────┐  ┌────────────────┐
+    │  Philosopher   │  │    Prophet     │
+    │  process_      │  │    process_    │
+    │  message()     │  │    message()   │
+    └────────┬───────┘  └────────┬───────┘
+             │                   │
+             ▼                   ▼
+    ┌────────────────┐  ┌────────────────┐
+    │ Phil Response  │  │ Prophet Response│
+    └────────┬───────┘  └────────┬───────┘
+             │                   │
+             └─────────┬─────────┘
+                       │
+                       ▼
+              ┌────────────────┐
+              │ chat_history   │
+              │ .append()      │
+              └────────┬───────┘
+                       │
+                       ▼
+              ┌────────────────┐
+              │ Ответы выведены│
+              │ пользователю   │
+              └────────────────┘
+                       │
+                  (цикл до 'exit')
+```
+
+**Промпт**: См. PROMPTS_DOCUMENTATION.md → 4.4.1
+
+**Передача данных**:
+```python
+input: question (str)
+output: [phil_response (str), prophet_response (str)]
+stored_in: chat_history[]
+```
+
+---
+
+### 3.2 Approve/Reject кандидата
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────────────────────┐
+│        ПАЙПЛАЙН: APPROVE/REJECT CANDIDATE              │
+└────────────────────────────────────────────────────────┘
+
+    Approve (option 2)              Reject (option 3)
+         │                                │
+         ▼                                ▼
+    ┌──────────────┐              ┌──────────────┐
+    │ Get approval │              │ Get rejection│
+    │ notes        │              │ reason       │
+    │ (optional)   │              │ (required)   │
+    └──────┬───────┘              └──────┬───────┘
+           │                              │
+           ▼                              ▼
+    ┌──────────────┐              ┌──────────────┐
+    │ Confirm      │              │ Confirm      │
+    │ (Yes/No)     │              │ (Yes/No)     │
+    └──────┬───────┘              └──────┬───────┘
+           │                              │
+           ▼                              ▼
+    ┌──────────────┐              ┌──────────────┐
+    │ Display      │              │ Display      │
+    │ confirmation │              │ confirmation │
+    │ panel:       │              │ panel:       │
+    │ - Name       │              │ - Name       │
+    │ - Role       │              │ - Role       │
+    │ - Notes      │              │ - Reason     │
+    │ - Timestamp  │              │ - Timestamp  │
+    └──────────────┘              └──────────────┘
+```
+
+**Передача данных**:
+```python
+Approve:
+  input: notes (str, optional)
+  output: confirmation_panel
+
+Reject:
+  input: reason (str, required)
+  output: confirmation_panel
+```
+
+---
+
+### 3.3 Alternative Roles
+
+**Назначение**: Предложение альтернативных позиций для кандидата
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────────────────────┐
+│          ПАЙПЛАЙН: АЛЬТЕРНАТИВНЫЕ РОЛИ                 │
+└────────────────────────────────────────────────────────┘
+
+    Входные данные:
+    - application (candidate profile)
+      │
+      ▼
+    ┌──────────────────────────┐
+    │ Формирование промпта:    │
+    │ - Профиль кандидата      │
+    │ - Результаты оценки      │
+    │ - Уникальные навыки      │
+    │ - Потенциал              │
+    └────────┬─────────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │  Philosopher           │
+    │  process_message()     │
+    │                        │
+    │  "Suggest alternative  │
+    │   roles at Principals  │
+    │   Network where they   │
+    │   might excel..."      │
+    └────────┬───────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │ Альтернативные роли:   │
+    │ - Role 1 + rationale   │
+    │ - Role 2 + rationale   │
+    │ - Role 3 + rationale   │
+    └────────────────────────┘
+```
+
+**Промпт**: См. PROMPTS_DOCUMENTATION.md → 4.4.2
+
+**Передача данных**:
+```python
+input: application (dict)
+output: alternative_roles_suggestions (str)
+```
+
+---
+
+### 3.4 Deep Dive Analysis
+
+**Назначение**: Углубленный анализ конкретного аспекта кандидата
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────────────────────┐
+│           ПАЙПЛАЙН: DEEP DIVE ANALYSIS                 │
+└────────────────────────────────────────────────────────┘
+
+    Пользователь выбирает аспект:
+    ┌──────────────────────┐
+    │ - Technical Depth    │
+    │ - Community Lead     │
+    │ - Innovation         │
+    │ - Cultural Impact    │
+    │ - Growth Trajectory  │
+    └────────┬─────────────┘
+             │
+             ▼
+    ┌──────────────────────┐
+    │ Формирование промпта:│
+    │ "Perform deep dive   │
+    │  analysis of the     │
+    │  candidate's {aspect}│
+    │  Consider all eval   │
+    │  data..."            │
+    └────────┬─────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │  Philosopher           │
+    │  process_message()     │
+    └────────┬───────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │ Детальный анализ:      │
+    │ - Глубинные инсайты    │
+    │ - Скрытые паттерны     │
+    │ - Риски и возможности  │
+    │ - Рекомендации         │
+    └────────────────────────┘
+```
+
+**Промпт**: См. PROMPTS_DOCUMENTATION.md → 4.4.3
+
+**Передача данных**:
+```python
+input: aspect (choice from list)
+output: deep_analysis (str)
+```
+
+---
+
+### 3.5 Custom Assessment
+
+**Назначение**: Создание индивидуального ассесмента для кандидата
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────────────────────┐
+│         ПАЙПЛАЙН: CUSTOM ASSESSMENT                    │
+└────────────────────────────────────────────────────────┘
+
+    Пользователь выбирает тип:
+    ┌───────────────────────────┐
+    │ - Technical Challenge     │
+    │ - Community Scenario      │
+    │ - Leadership Exercise     │
+    │ - Innovation Task         │
+    └────────┬──────────────────┘
+             │
+             ▼
+    ┌──────────────────────┐
+    │ Формирование промпта:│
+    │ "Create custom       │
+    │  {assessment_type}   │
+    │  for {candidate},    │
+    │  tailored to their   │
+    │  background..."      │
+    └────────┬─────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │  Prophet               │
+    │  process_message()     │
+    └────────┬───────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │ Кастомный ассесмент:   │
+    │ - Описание задачи      │
+    │ - Критерии оценки      │
+    │ - Временные рамки      │
+    │ - Ожидаемые результаты │
+    └────────────────────────┘
+```
+
+**Промпт**: См. PROMPTS_DOCUMENTATION.md → 4.4.4
+
+**Передача данных**:
+```python
+input: assessment_type (choice from list), candidate_name (str)
+output: custom_assessment (str)
+```
+
+---
+
+### 3.6 Team Interaction Simulation
+
+**Назначение**: Симуляция взаимодействия кандидата с командой
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────────────────────┐
+│        ПАЙПЛАЙН: TEAM INTERACTION SIMULATION           │
+└────────────────────────────────────────────────────────┘
+
+    Пользователь выбирает сценарий:
+    ┌───────────────────────────────┐
+    │ - Discord Crisis Management   │
+    │ - Community Event Planning    │
+    │ - Team Collaboration Project  │
+    │ - Technical Implementation    │
+    │ - Community Feedback Session  │
+    └────────┬──────────────────────┘
+             │
+             ▼
+    ┌──────────────────────┐
+    │ Формирование промпта:│
+    │ "Simulate detailed   │
+    │  team interaction    │
+    │  scenario for {name} │
+    │  as Discord Architect│
+    │                      │
+    │  Include:            │
+    │  - Situation details │
+    │  - Likely responses  │
+    │  - Team dynamics     │
+    │  - Decision process  │
+    │  - Comm style        │
+    │  - Challenges        │
+    └────────┬─────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │  Prophet               │
+    │  process_message()     │
+    └────────┬───────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │ Симуляция:             │
+    │ - Описание сценария    │
+    │ - Диалоги              │
+    │ - Реакции кандидата    │
+    │ - Командная динамика   │
+    │ - Анализ коммуникации  │
+    │ - Решения и вызовы     │
+    └────────────────────────┘
+```
+
+**Промпт**: См. PROMPTS_DOCUMENTATION.md → 4.4.6
+
+**Передача данных**:
+```python
+input: scenario (choice), candidate_name (str)
+output: interaction_simulation (str)
+```
+
+---
+
+### 3.7 Growth Roadmap
+
+**Назначение**: Создание персонализированной дорожной карты развития
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────────────────────┐
+│            ПАЙПЛАЙН: GROWTH ROADMAP                    │
+└────────────────────────────────────────────────────────┘
+
+    Пользователь выбирает timeframe:
+    ┌───────────────────┐
+    │ - First 30 Days   │
+    │ - 90 Day Plan     │
+    │ - 6 Month Vision  │
+    │ - 1 Year Dev      │
+    └────────┬──────────┘
+             │
+             ▼
+    ┌──────────────────────┐
+    │ Формирование промпта:│
+    │ "Create detailed     │
+    │  growth roadmap for  │
+    │  {name}...           │
+    │                      │
+    │  Include:            │
+    │  - Milestones        │
+    │  - Skill goals       │
+    │  - Community targets │
+    │  - Tech learning     │
+    │  - Leadership dev    │
+    │  - Success metrics   │
+    └────────┬─────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │  Philosopher           │
+    │  process_message()     │
+    └────────┬───────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │ Дорожная карта:        │
+    │ ┌──────────────────┐   │
+    │ │ Milestone 1      │   │
+    │ │ - Tasks          │   │
+    │ │ - Skills         │   │
+    │ │ - Metrics        │   │
+    │ └──────────────────┘   │
+    │ ┌──────────────────┐   │
+    │ │ Milestone 2...   │   │
+    │ └──────────────────┘   │
+    └────────────────────────┘
+```
+
+**Промпт**: См. PROMPTS_DOCUMENTATION.md → 4.4.7
+
+**Передача данных**:
+```python
+input: timeframe (choice), candidate_name (str)
+output: growth_roadmap (str, markdown format)
+```
+
+---
+
+### 3.8 Future Impact Analysis
+
+**Назначение**: Анализ потенциального влияния кандидата на организацию
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────────────────────┐
+│         ПАЙПЛАЙН: FUTURE IMPACT ANALYSIS               │
+└────────────────────────────────────────────────────────┘
+
+    Пользователь выбирает область:
+    ┌────────────────────┐
+    │ - Community Growth │
+    │ - Tech Innovation  │
+    │ - Team Culture     │
+    │ - Educational      │
+    │ - Platform Evol    │
+    └────────┬───────────┘
+             │
+             ▼
+    ┌──────────────────────┐
+    │ Формирование промпта:│
+    │ "Analyze potential   │
+    │  future impact of    │
+    │  {name} on PN:       │
+    │                      │
+    │  Consider:           │
+    │  - Short-term wins   │
+    │  - Medium-term ach   │
+    │  - Long-term transf  │
+    │  - Ripple effects    │
+    │  - Innovations       │
+    │  - Risks & opps      │
+    └────────┬─────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │  Prophet               │
+    │  process_message()     │
+    └────────┬───────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │ Анализ влияния:        │
+    │ ┌──────────────────┐   │
+    │ │ 1-3 месяца       │   │
+    │ │ Quick wins       │   │
+    │ └──────────────────┘   │
+    │ ┌──────────────────┐   │
+    │ │ 3-6 месяцев      │   │
+    │ │ Achievements     │   │
+    │ └──────────────────┘   │
+    │ ┌──────────────────┐   │
+    │ │ 6-12 месяцев     │   │
+    │ │ Transformation   │   │
+    │ └──────────────────┘   │
+    │ Risks & Opportunities  │
+    └────────────────────────┘
+```
+
+**Промпт**: См. PROMPTS_DOCUMENTATION.md → 4.4.8
+
+**Передача данных**:
+```python
+input: impact_area (choice), candidate_name (str)
+output: future_impact_analysis (str)
+```
+
+---
+
+### 3.9 Competitive Analysis
+
+**Назначение**: Сравнение кандидата с рыночными стандартами
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────────────────────┐
+│          ПАЙПЛАЙН: COMPETITIVE ANALYSIS                │
+└────────────────────────────────────────────────────────┘
+
+    Пользователь выбирает аспект:
+    ┌───────────────────────────┐
+    │ - Technical Skills        │
+    │ - Community Building Exp  │
+    │ - Innovation Capability   │
+    │ - Leadership Potential    │
+    │ - Market Value            │
+    └────────┬──────────────────┘
+             │
+             ▼
+    ┌──────────────────────┐
+    │ Формирование промпта:│
+    │ "Perform competitive │
+    │  analysis of {name}  │
+    │  against market...   │
+    │                      │
+    │  Include:            │
+    │  - Benchmarks        │
+    │  - Differentiators   │
+    │  - Market position   │
+    │  - Advantages        │
+    │  - Value prop        │
+    └────────┬─────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │  Philosopher           │
+    │  process_message()     │
+    └────────┬───────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │ Конкурентный анализ:   │
+    │ ┌──────────────────┐   │
+    │ │ Market Benchmark │   │
+    │ │ ■■■■■■□□ 75%     │   │
+    │ └──────────────────┘   │
+    │ ┌──────────────────┐   │
+    │ │ Candidate Score  │   │
+    │ │ ■■■■■■■■■ 90%    │   │
+    │ └──────────────────┘   │
+    │ Unique Differentiators │
+    │ Competitive Advantages │
+    │ Market Alignment Gaps  │
+    └────────────────────────┘
+```
+
+**Промпт**: См. PROMPTS_DOCUMENTATION.md → 4.4.9
+
+**Передача данных**:
+```python
+input: aspect (choice), candidate_name (str)
+output: competitive_analysis (str)
+```
+
+---
+
+### 3.10 Suggest Improvements
+
+**Назначение**: Предложения по улучшению процесса оценки
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────────────────────┐
+│         ПАЙПЛАЙН: SUGGEST IMPROVEMENTS                 │
+└────────────────────────────────────────────────────────┘
+
+    Входные данные:
+    - Профиль кандидата
+    - Процесс оценки
+      │
+      ▼
+    ┌──────────────────────┐
+    │ Формирование промпта:│
+    │ "Based on candidate  │
+    │  profile and our     │
+    │  evaluation process: │
+    │                      │
+    │  1. What could we    │
+    │     improve?         │
+    │  2. What additional  │
+    │     aspects?         │
+    │  3. How to better    │
+    │     assess this type?│
+    └────────┬─────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │  Philosopher           │
+    │  process_message()     │
+    └────────┬───────────────┘
+             │
+             ▼
+    ┌────────────────────────┐
+    │ Улучшения:             │
+    │ - Process improvements │
+    │ - Additional aspects   │
+    │ - Better assessment    │
+    │   methods              │
+    │ - Meta-insights        │
+    └────────────────────────┘
+```
+
+**Промпт**: См. PROMPTS_DOCUMENTATION.md → 4.4.5
+
+**Передача данных**:
+```python
+input: candidate_profile (dict), evaluation_process (context)
+output: improvement_suggestions (str)
+```
+
+---
+
+### 3.11 Exit
+
+**Назначение**: Выход из интерактивной сессии с подтверждением
+
+**ASCII схема**:
+```
+┌────────────────────────────────────────┐
+│        ПАЙПЛАЙН: EXIT                  │
+└────────────────────────────────────────┘
+
+    Пользователь выбирает Exit
+      │
+      ▼
+    ┌──────────────────────┐
+    │ Confirm.ask()        │
+    │ "Are you sure you    │
+    │  want to exit?"      │
+    └────────┬─────────────┘
+             │
+             ├─ Yes → break loop → конец
+             │
+             └─ No → return to menu
+```
+
+---
+
+### Сводная таблица интерактивных пайплайнов
+
+| # | Название | Агент | Тип ввода | Промпт |
+|---|----------|-------|-----------|--------|
+| 1 | Chat | Both | Question (str) | 4.4.1 |
+| 2 | Approve | - | Notes (str, opt) | - |
+| 3 | Reject | - | Reason (str, req) | - |
+| 4 | Alt Roles | Philosopher | - | 4.4.2 |
+| 5 | Deep Dive | Philosopher | Aspect (choice) | 4.4.3 |
+| 6 | Assessment | Prophet | Type (choice) | 4.4.4 |
+| 7 | Team Sim | Prophet | Scenario (choice) | 4.4.6 |
+| 8 | Roadmap | Philosopher | Timeframe (choice) | 4.4.7 |
+| 9 | Impact | Prophet | Area (choice) | 4.4.8 |
+| 10 | Competitive | Philosopher | Aspect (choice) | 4.4.9 |
+| 11 | Improvements | Philosopher | - | 4.4.5 |
+| 12 | Exit | - | Confirmation | - |
+
+### Характеристики интерактивных пайплайнов
+
+- **Режим**: Циклический (while True до exit)
+- **Агенты**: Philosopher (7 пайплайнов), Prophet (4 пайплайна), None (3 пайплайна)
+- **Ввод пользователя**: Требуется для большинства пайплайнов
+- **Контекст**: Все пайплайны имеют доступ к исходной оценке кандидата
+- **История**: Сохраняется в `chat_history` (только для Chat)
+- **Временные затраты**: 3-15 секунд на запрос (зависит от сложности)
+
+---
+
