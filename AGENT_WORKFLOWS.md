@@ -1382,3 +1382,300 @@ output: improvement_suggestions (str)
 
 ---
 
+## 4. Технические детали
+
+### 4.1 Общая архитектура системы
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                    АРХИТЕКТУРА СИСТЕМЫ                     │
+└────────────────────────────────────────────────────────────┘
+
+                      ┌─────────────────┐
+                      │  CLI Interface  │
+                      │   (Typer app)   │
+                      └────────┬────────┘
+                               │
+                               ▼
+                  ┌─────────────────────────┐
+                  │  ApplicationProcessor   │
+                  │  (CSV → dict)           │
+                  └────────┬────────────────┘
+                           │
+                           ▼
+                  ┌─────────────────────────┐
+                  │      HRTeam             │
+                  │  - TalentPhilosopher    │
+                  │  - CandidateProphet     │
+                  │  - conversation_history │
+                  └────────┬────────────────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+              ▼            ▼            ▼
+    ┌──────────────┐ ┌──────────┐ ┌──────────────┐
+    │ Philosopher  │ │ Prophet  │ │ Interactive  │
+    │   Agent      │ │  Agent   │ │   Session    │
+    └──────┬───────┘ └────┬─────┘ └──────┬───────┘
+           │              │               │
+           └──────────────┼───────────────┘
+                          │
+                          ▼
+                 ┌─────────────────┐
+                 │  OpenAI GPT-4   │
+                 │   (gpt-4o)      │
+                 └─────────────────┘
+```
+
+### 4.2 Иерархия агентов
+
+```
+BaseAgent (src/agents/base_agent.py)
+    │
+    ├── TalentPhilosopher (src/agents/philosopher.py)
+    │   ├── _get_system_prompt()
+    │   ├── evaluate_candidate(application_data)
+    │   └── generate_evaluation_report(evaluation_data)
+    │
+    ├── CandidateProphet (src/agents/prophet.py)
+    │   ├── _get_system_prompt()
+    │   ├── evaluate_candidate(application_data)
+    │   └── generate_evaluation_report(evaluation_data)
+    │
+    ├── UserAdvocateAgent (src/agents/advocate.py)
+    │   ├── _get_system_prompt()
+    │   ├── introduce_case(user_input)
+    │   ├── request_recommendations(strategist_analysis)
+    │   ├── summarize_recommendations(recommendations)
+    │   └── generate_report_section(topic, content)
+    │
+    └── StrategistAgent (src/agents/strategist.py)
+        ├── _get_system_prompt()
+        ├── analyze_case(user_input, advocate_intro)
+        ├── provide_recommendations(advocate_request)
+        └── generate_report_section(topic, content)
+```
+
+### 4.3 Поток данных между компонентами
+
+```
+┌──────────┐     ┌──────────────┐     ┌──────────────┐
+│   CSV    │ --> │ Processor    │ --> │ application_ │
+│   File   │     │ load_apps()  │     │    data      │
+└──────────┘     └──────────────┘     └──────┬───────┘
+                                              │
+                  ┌───────────────────────────┘
+                  │
+                  ▼
+         ┌────────────────────┐
+         │   HRTeam           │
+         │   evaluate_        │
+         │   application()    │
+         └────────┬───────────┘
+                  │
+        ┌─────────┴─────────┐
+        │                   │
+        ▼                   ▼
+┌───────────────┐   ┌───────────────┐
+│ Philosopher   │   │    Prophet    │
+│ evaluate_     │   │   evaluate_   │
+│ candidate()   │   │   candidate() │
+└───────┬───────┘   └───────┬───────┘
+        │                   │
+        └─────────┬─────────┘
+                  │
+                  ▼
+       ┌──────────────────────┐
+       │ conversation_history │
+       │ [(agent, response)]  │
+       └──────────┬───────────┘
+                  │
+                  ▼
+         ┌────────────────────┐
+         │ generate_report()  │
+         └────────┬───────────┘
+                  │
+                  ▼
+         ┌────────────────────┐
+         │ report_data (dict) │
+         └────────┬───────────┘
+                  │
+                  ▼
+       ┌────────────────────────┐
+       │ InteractiveSession     │
+       │ start_interactive_     │
+       │ session()              │
+       └────────────────────────┘
+```
+
+### 4.4 Сводная статистика пайплайнов
+
+#### Основные пайплайны: 2
+1. Оценка кандидатов (Philosopher + Prophet)
+2. Карьерное консультирование (Advocate + Strategist)
+
+#### Интерактивные пайплайны: 12
+- Диалоговые: 2 (Chat, Improvements)
+- Аналитические: 7 (Alt Roles, Deep Dive, Assessment, Team Sim, Roadmap, Impact, Competitive)
+- Процедурные: 3 (Approve, Reject, Exit)
+
+#### Используемые AI агенты: 4
+1. **Talent Philosopher** - философская оценка, глубинный анализ
+2. **Candidate Prophet** - пророческая оценка, видение будущего
+3. **User Advocate** - карьерное консультирование, защита интересов
+4. **Career Strategist** - стратегические рекомендации, контрарианское мышление
+
+#### Общее количество AI промптов: 22+
+- Системные промпты: 4
+- Промпты оценки: 4
+- Роль-специфичные: 2
+- Интерактивные: 12+
+
+### 4.5 Паттерны передачи данных
+
+#### 1. Последовательная обработка
+```
+Input → Agent 1 → Output 1 → Agent 2 → Output 2 → Final Result
+```
+Используется в: Оценка кандидатов, Карьерное консультирование
+
+#### 2. Параллельная обработка (концептуально)
+```
+        ┌─→ Agent 1 → Output 1 ─┐
+Input ──┤                        ├─→ Merge → Final Result
+        └─→ Agent 2 → Output 2 ─┘
+```
+Используется в: Chat with Principals (оба агента отвечают независимо)
+
+#### 3. Циклическая обработка
+```
+Input → Agent → Output → User Input → Agent → Output → ...
+```
+Используется в: Интерактивные сессии
+
+### 4.6 Временные характеристики
+
+| Пайплайн | Среднее время | Агентов | Вызовов AI |
+|----------|---------------|---------|------------|
+| Оценка кандидатов | ~20-30 сек | 2 | 2 |
+| Карьерное консультирование | ~25-35 сек | 2 | 5 |
+| Chat | ~8-12 сек | 2 | 2 |
+| Deep Dive | ~5-10 сек | 1 | 1 |
+| Roadmap | ~8-15 сек | 1 | 1 |
+| Team Simulation | ~10-15 сек | 1 | 1 |
+| Approve/Reject | <1 сек | 0 | 0 |
+
+### 4.7 Форматы данных
+
+#### Application Data (входные данные)
+```python
+{
+    'name': str,
+    'role': str,
+    'application': str,  # Полный текст заявки
+    'background': str,   # Дополнительная информация
+    # ... другие поля из CSV
+}
+```
+
+#### Conversation History
+```python
+conversation_history = [
+    ("philosopher", "Philosophical analysis text..."),
+    ("prophet", "Prophetic vision text..."),
+    # ...
+]
+```
+
+#### Report Data
+```python
+{
+    'scores': {
+        'category': {
+            'subcategory': float,  # 0-10
+            'overall': float
+        }
+    },
+    'total_score': float,
+    'recommendation': str,
+    'strengths': {
+        'category': [str]
+    },
+    'development_areas': {
+        'category': [str]
+    }
+}
+```
+
+### 4.8 Конфигурация и настройки
+
+#### AI модель
+- **Модель**: OpenAI GPT-4 (gpt-4o)
+- **Температура**: ~0.7-0.8 (для креативных ответов)
+- **Max tokens**: Динамическое (зависит от промпта)
+
+#### Файловая структура
+```
+HR-Principals/
+├── src/
+│   ├── agents/
+│   │   ├── base_agent.py
+│   │   ├── philosopher.py
+│   │   ├── prophet.py
+│   │   ├── advocate.py
+│   │   └── strategist.py
+│   ├── utils/
+│   │   ├── data_processor.py
+│   │   ├── ui_manager.py
+│   │   ├── visualizer.py
+│   │   └── prompt_loader.py
+│   └── main.py
+├── prompts/
+│   ├── talent_philosopher.yaml
+│   ├── candidate_prophet.yaml
+│   └── roles/
+│       └── discord_architect.yaml
+└── data/
+    └── applications.csv
+```
+
+### 4.9 Ключевые зависимости
+
+- `openai` - API для GPT-4
+- `rich` - UI и форматирование вывода
+- `typer` - CLI interface
+- `asyncio` - Асинхронная обработка
+- `pydantic` - Валидация данных (если используется)
+- `pyyaml` - Загрузка конфигурации промптов
+
+---
+
+## Заключение
+
+### Основные преимущества архитектуры
+
+1. **Модульность** - каждый агент независим и может быть заменен
+2. **Расширяемость** - легко добавить новые пайплайны и агентов
+3. **Прозрачность** - четкая трассировка данных между этапами
+4. **Интерактивность** - 12 различных способов взаимодействия с оценкой
+5. **Философский подход** - уникальная методология оценки через диалог агентов
+
+### Рекомендации по использованию
+
+1. **Для оценки кандидатов**: Используйте основной пайплайн оценки, затем углубляйтесь через интерактивные опции
+2. **Для карьерного консультирования**: Запускайте диалог Advocate-Strategist для нестандартных карьерных советов
+3. **Для анализа**: Используйте Deep Dive, Competitive Analysis и Future Impact для детального исследования
+4. **Для принятия решений**: Комбинируйте несколько интерактивных пайплайнов для всесторонней картины
+
+### Связь с PROMPTS_DOCUMENTATION.md
+
+Все промпты, используемые в пайплайнах, детально задокументированы в файле `PROMPTS_DOCUMENTATION.md`. Для каждого пайплайна указаны ссылки на соответствующие промпты.
+
+---
+
+**Документация создана:** 2025-11-11
+**Версия приложения:** HR-Principals Multi-Agent AI Recruitment System
+**Общее количество пайплайнов:** 14 (2 основных + 12 интерактивных)
+**AI агентов:** 4 (Philosopher, Prophet, Advocate, Strategist)
+**AI промптов:** 22+
+
